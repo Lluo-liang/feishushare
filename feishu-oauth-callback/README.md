@@ -44,9 +44,8 @@ https://your-project-name.vercel.app/oauth-callback
 feishu-oauth-callback/
 ├── package.json          # 项目配置
 ├── vercel.json           # Vercel部署配置 ✅
-├── public/
-│   ├── index.html        # 首页
-│   └── oauth-callback.html  # 回调处理页面 ✅
+├── index.html            # 首页 ✅
+├── oauth-callback.html   # 回调处理页面 ✅
 └── README.md             # 说明文档
 ```
 

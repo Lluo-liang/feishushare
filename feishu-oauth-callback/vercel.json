@@ -1,11 +1,6 @@
 {
-  "version": 2,
-  "rewrites": [
-    {
-      "source": "/oauth-callback",
-      "destination": "/oauth-callback.html"
-    }
-  ],
+  "cleanUrls": true,
+  "trailingSlash": false,
   "headers": [
     {
       "source": "/(.*)",
