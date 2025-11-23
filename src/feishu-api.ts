@@ -834,9 +834,9 @@ export class FeishuApiService {
 				const cleanTitle = title.endsWith('.md') ? title.slice(0, -3) : title;
 				const importResult = await this.createImportTaskWithCorrectFolder(uploadResult.fileToken, cleanTitle);
 				if (importResult.success && importResult.ticket) {
-					// 第三步：等待导入完成（15秒超时）
-					Debug.log('Step 3: Waiting for import completion (15s timeout)...');
-					const finalResult = await this.waitForImportCompletionWithTimeout(importResult.ticket, 15000);
+					// 第三步：等待导入完成（30秒超时）
+					Debug.log('Step 3: Waiting for import completion (30s timeout)...');
+					const finalResult = await this.waitForImportCompletionWithTimeout(importResult.ticket, 30000);
 					Debug.log(`🔍 IMPORT RESULT DEBUG: success=${finalResult.success}, documentToken=${finalResult.documentToken}`);
 					if (finalResult.success && finalResult.documentToken) {
 						const docUrl = `https://feishu.cn/docx/${finalResult.documentToken}`;
@@ -995,9 +995,9 @@ export class FeishuApiService {
 				throw new Error('创建导入任务失败');
 			}
 
-			// 第三步：等待导入完成
+			// 第三步：等待导入完成（30秒超时）
 			Debug.log('🔄 [分享到知识库] 开始等待导入完成...');
-			const finalResult = await this.waitForImportCompletionWithTimeout(importResult.ticket, 15000);
+			const finalResult = await this.waitForImportCompletionWithTimeout(importResult.ticket, 30000);
 
 			if (!finalResult.success || !finalResult.documentToken) {
 				const errorMsg = `文档导入失败或超时: ${finalResult.error || '未知错误'}`;
@@ -1157,9 +1157,9 @@ export class FeishuApiService {
 				const cleanTitle = title.endsWith('.md') ? title.slice(0, -3) : title;
 				const importResult = await this.createImportTaskWithCorrectFolder(uploadResult.fileToken, cleanTitle);
 				if (importResult.success && importResult.ticket) {
-					// 第三步：等待导入完成（15秒超时）
-					Debug.log('Step 3: Waiting for import completion (15s timeout)...');
-					const finalResult = await this.waitForImportCompletionWithTimeout(importResult.ticket, 15000);
+					// 第三步：等待导入完成（30秒超时）
+					Debug.log('Step 3: Waiting for import completion (30s timeout)...');
+					const finalResult = await this.waitForImportCompletionWithTimeout(importResult.ticket, 30000);
 					if (finalResult.success && finalResult.documentToken) {
 						const docUrl = `https://feishu.cn/docx/${finalResult.documentToken}`;
 
@@ -4860,8 +4860,8 @@ export class FeishuApiService {
 				};
 			}
 
-			// 等待导入完成
-			const finalResult = await this.waitForImportCompletionWithTimeout(importResult.ticket!, 15000);
+			// 等待导入完成（30秒超时）
+			const finalResult = await this.waitForImportCompletionWithTimeout(importResult.ticket!, 30000);
 
 			if (finalResult.success && finalResult.documentToken) {
 				const docUrl = `https://feishu.cn/docx/${finalResult.documentToken}`;
