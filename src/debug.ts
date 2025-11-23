@@ -1,52 +1,56 @@
-// 调试工具类 - 生产模式
+// 调试工具类 - 生产模式（带持久化支持）
 export class Debug {
-    private static enabled = false; // 关闭调试模式
-    private static verboseMode = false; // 关闭详细日志
+    private static readonly STORAGE_KEY_DEBUG = 'feishu-debug-enabled';
+    private static readonly STORAGE_KEY_VERBOSE = 'feishu-debug-verbose';
+
+    // 初始化：从 localStorage 读取状态
+    private static enabled = localStorage.getItem(Debug.STORAGE_KEY_DEBUG) === 'true';
+    private static verboseMode = localStorage.getItem(Debug.STORAGE_KEY_VERBOSE) === 'true';
 
     static log(...args: any[]) {
-        if (this.enabled) {
+        if (this.isEnabled()) {
             const timestamp = new Date().toISOString().substring(11, 23);
             console.log(`[Feishu ${timestamp}]`, ...args);
         }
     }
 
     static warn(...args: any[]) {
-        if (this.enabled) {
+        if (this.isEnabled()) {
             const timestamp = new Date().toISOString().substring(11, 23);
             console.warn(`[Feishu ${timestamp}] ⚠️`, ...args);
         }
     }
 
     static error(...args: any[]) {
-        if (this.enabled) {
+        if (this.isEnabled()) {
             const timestamp = new Date().toISOString().substring(11, 23);
             console.error(`[Feishu ${timestamp}] ❌`, ...args);
         }
     }
 
     static verbose(...args: any[]) {
-        if (this.enabled && this.verboseMode) {
+        if (this.isEnabled() && this.isVerbose()) {
             const timestamp = new Date().toISOString().substring(11, 23);
             console.log(`[Feishu ${timestamp}] 🔍`, ...args);
         }
     }
 
     static step(stepName: string, ...args: any[]) {
-        if (this.enabled) {
+        if (this.isEnabled()) {
             const timestamp = new Date().toISOString().substring(11, 23);
             console.log(`[Feishu ${timestamp}] 📋 STEP: ${stepName}`, ...args);
         }
     }
 
     static api(method: string, url: string, data?: any) {
-        if (this.enabled && this.verboseMode) {
+        if (this.isEnabled() && this.isVerbose()) {
             const timestamp = new Date().toISOString().substring(11, 23);
             console.log(`[Feishu ${timestamp}] 🌐 API: ${method} ${url}`, data ? data : '');
         }
     }
 
     static result(operation: string, success: boolean, data?: any) {
-        if (this.enabled) {
+        if (this.isEnabled()) {
             const timestamp = new Date().toISOString().substring(11, 23);
             const icon = success ? '✅' : '❌';
             console.log(`[Feishu ${timestamp}] ${icon} ${operation}:`, data ? data : '');
@@ -55,33 +59,39 @@ export class Debug {
 
     static enable() {
         this.enabled = true;
-        console.log('[Feishu] 🔧 Debug logging enabled');
+        localStorage.setItem(this.STORAGE_KEY_DEBUG, 'true');
+        console.log('[Feishu] 🔧 Debug logging enabled (持久化已保存)');
     }
 
     static disable() {
         this.enabled = false;
+        localStorage.removeItem(this.STORAGE_KEY_DEBUG);
         console.log('[Feishu] 🔇 Debug logging disabled');
     }
 
     static enableVerbose() {
         this.verboseMode = true;
-        console.log('[Feishu] 🔍 Verbose logging enabled');
+        localStorage.setItem(this.STORAGE_KEY_VERBOSE, 'true');
+        console.log('[Feishu] 🔍 Verbose logging enabled (持久化已保存)');
     }
 
     static disableVerbose() {
         this.verboseMode = false;
+        localStorage.removeItem(this.STORAGE_KEY_VERBOSE);
         console.log('[Feishu] 🤫 Verbose logging disabled');
     }
 
     static isEnabled(): boolean {
-        return this.enabled;
+        // 实时从 localStorage 读取，确保状态同步
+        return localStorage.getItem(this.STORAGE_KEY_DEBUG) === 'true';
     }
 
     static isVerbose(): boolean {
-        return this.verboseMode;
+        // 实时从 localStorage 读取，确保状态同步
+        return localStorage.getItem(this.STORAGE_KEY_VERBOSE) === 'true';
     }
 
     static getStatus(): string {
-        return `Debug: ${this.enabled ? 'ON' : 'OFF'}, Verbose: ${this.verboseMode ? 'ON' : 'OFF'}`;
+        return `Debug: ${this.isEnabled() ? 'ON' : 'OFF'}, Verbose: ${this.isVerbose() ? 'ON' : 'OFF'}`;
     }
 }

@@ -19,6 +19,11 @@ export default class FeishuPlugin extends Plugin {
 		this.feishuApi = new FeishuApiService(this.settings, this.app);
 		this.markdownProcessor = new MarkdownProcessor(this.app);
 
+		// 显示调试状态
+		if (Debug.isEnabled()) {
+			console.log('[Feishu] 🔧 Debug mode is ON (调试模式已开启)');
+		}
+
 		// 注册自定义协议处理器，实现自动授权回调
 		this.registerObsidianProtocolHandler('feishu-auth', (params) => {
 			this.handleOAuthCallback(params);
