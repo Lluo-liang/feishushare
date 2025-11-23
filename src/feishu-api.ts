@@ -2350,7 +2350,8 @@ export class FeishuApiService {
 				Debug.log(`✅ [检查导入状态] 解析结果: job_status=${result.job_status}, token=${result.token || '无'}, type=${result.type || '无'}`);
 
 				// 状态说明: 0=未开始, 1=进行中, 2=失败, 3=成功
-				const statusText = {0: '未开始', 1: '进行中', 2: '失败', 3: '成功'}[result.job_status] || '未知';
+				const statusMap: Record<number, string> = {0: '未开始', 1: '进行中', 2: '失败', 3: '成功'};
+				const statusText = statusMap[result.job_status] || '未知';
 				Debug.log(`📌 [检查导入状态] 任务状态: ${statusText}(${result.job_status})`);
 
 				return {
