@@ -996,11 +996,16 @@ export class FeishuApiService {
 			}
 
 			// 第三步：等待导入完成
+			Debug.log('🔄 [分享到知识库] 开始等待导入完成...');
 			const finalResult = await this.waitForImportCompletionWithTimeout(importResult.ticket, 15000);
 
 			if (!finalResult.success || !finalResult.documentToken) {
-				throw new Error('文档导入失败或超时');
+				const errorMsg = `文档导入失败或超时: ${finalResult.error || '未知错误'}`;
+				Debug.error(`❌ [分享到知识库] ${errorMsg}`);
+				throw new Error(errorMsg);
 			}
+
+			Debug.log(`✅ [分享到知识库] 导入完成，获得documentToken: ${finalResult.documentToken}`);
 
 			// 第四步：移动到知识库
 			if (statusNotice) {
@@ -2173,6 +2178,7 @@ export class FeishuApiService {
 			};
 
 			// 使用配置的文件夹或默认根文件夹
+			Debug.log('📤 [创建导入任务] 请求参数:', JSON.stringify(importData, null, 2));
 
 			const response = await requestUrl({
 				url: `${FEISHU_CONFIG.BASE_URL}/drive/v1/import_tasks`,
@@ -2185,13 +2191,16 @@ export class FeishuApiService {
 			});
 
 			const data = response.json || JSON.parse(response.text);
+			Debug.log('📥 [创建导入任务] API返回:', JSON.stringify(data, null, 2));
 
 			if (data.code === 0) {
+				Debug.log(`✅ [创建导入任务] 成功获取ticket: ${data.data.ticket}`);
 				return {
 					success: true,
 					ticket: data.data.ticket
 				};
 			} else {
+				Debug.error(`❌ [创建导入任务] 失败 - code: ${data.code}, msg: ${data.msg}`);
 				return {
 					success: false,
 					error: data.msg || '创建导入任务失败'
@@ -2199,7 +2208,7 @@ export class FeishuApiService {
 			}
 
 		} catch (error) {
-			Debug.error('Create import task error:', error);
+			Debug.error('❌ [创建导入任务] 异常:', error);
 			return {
 				success: false,
 				error: error.message
@@ -2214,64 +2223,73 @@ export class FeishuApiService {
 		const startTime = Date.now();
 		const maxAttempts = 25;
 
+		Debug.log(`⏱️ [等待导入] 开始等待，超时设置: ${timeoutMs}ms (${timeoutMs/1000}秒), 最多尝试: ${maxAttempts}次`);
+
 		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 			const elapsedTime = Date.now() - startTime;
 
 			// 检查是否超时
 			if (elapsedTime >= timeoutMs) {
-				Debug.warn(`Import timeout after ${elapsedTime}ms`);
+				Debug.error(`⏰ [等待导入] 超时！已等待 ${elapsedTime}ms (${(elapsedTime/1000).toFixed(2)}秒)`);
 				return {
 					success: false,
-					error: `导入任务超时 (${timeoutMs}ms)`
+					error: `导入任务超时 (已等待${(elapsedTime/1000).toFixed(2)}秒，超时设置${timeoutMs/1000}秒)`
 				};
 			}
 
 			try {
+				Debug.log(`🔄 [等待导入] 第${attempt}/${maxAttempts}次检查，已用时${(elapsedTime/1000).toFixed(1)}秒`);
 				const result = await this.checkImportStatus(ticket);
+
+				Debug.log(`📊 [等待导入] 状态检查结果: success=${result.success}, status=${result.status}, documentToken=${result.documentToken ? '存在' : '不存在'}`);
 
 				if (result.success && (result.status === 3 || result.status === 0)) {
 					if (result.documentToken) {
+						Debug.log(`✅ [等待导入] 导入成功！耗时${(elapsedTime/1000).toFixed(2)}秒, token: ${result.documentToken}`);
 						return {
 							success: true,
 							documentToken: result.documentToken
 						};
 					} else {
-						Debug.warn('Import completed but no document token returned, continuing to wait...');
+						Debug.warn(`⚠️ [等待导入] 状态显示完成(status=${result.status})但无token，继续等待...`);
 					}
 				} else if (result.success && result.status === 2) {
 					// 导入显示失败，但检查是否有document token
-					Debug.log(`🔍 Status 2 detected. Document token: ${result.documentToken || 'none'}`);
+					Debug.log(`🔍 [等待导入] 检测到状态2(失败). Document token: ${result.documentToken || '无'}`);
 					if (result.documentToken) {
-						Debug.log(`✅ Import completed despite failure status, got document token: ${result.documentToken}`);
+						Debug.log(`✅ [等待导入] 虽然状态为失败，但获得了token: ${result.documentToken}`);
 						return {
 							success: true,
 							documentToken: result.documentToken
 						};
 					} else {
-						Debug.warn(`⚠️ Import shows failure status (${result.status}), no document token yet. Attempt ${attempt}/8, continuing to wait...`);
+						Debug.warn(`⚠️ [等待导入] 状态=失败(${result.status}), 无token. 尝试${attempt}/8，继续等待...`);
 						if (attempt <= 8) { // 前8次尝试时，即使显示失败也继续等待
 							// 继续等待
 						} else {
 							// 8次后才真正认为失败
-							Debug.error('❌ Import failed after extended waiting');
+							Debug.error(`❌ [等待导入] 尝试${attempt}次后仍然失败，放弃等待`);
 							return {
 								success: false,
-								error: '导入任务失败'
+								error: `导入任务失败 (状态=${result.status}, 已尝试${attempt}次)`
 							};
 						}
 					}
+				} else if (result.success && result.status === 1) {
+					Debug.log(`⏳ [等待导入] 任务进行中(status=1)，继续等待...`);
 				} else {
-					Debug.log(`📊 Other status: ${result.status}, success: ${result.success}`);
-					}
+					Debug.warn(`❓ [等待导入] 未知状态: status=${result.status}, success=${result.success}, error=${result.error || '无'}`);
+				}
 
 				// 渐进式延迟
 				if (attempt < maxAttempts) {
 					const delay = this.getDelayForAttempt(attempt);
+					Debug.log(`💤 [等待导入] 等待${delay}ms后进行下次检查...`);
 					await new Promise(resolve => setTimeout(resolve, delay));
 				}
 
 			} catch (error) {
-				Debug.error('Check import status error:', error);
+				Debug.error(`❌ [等待导入] 第${attempt}次检查异常:`, error);
 				// 继续尝试
 				const delay = this.getDelayForAttempt(attempt);
 				await new Promise(resolve => setTimeout(resolve, delay));
@@ -2279,9 +2297,11 @@ export class FeishuApiService {
 		}
 
 		// 超时
+		const totalTime = Date.now() - startTime;
+		Debug.error(`⏰ [等待导入] 达到最大尝试次数(${maxAttempts})，总耗时${(totalTime/1000).toFixed(2)}秒`);
 		return {
 			success: false,
-			error: '导入任务超时'
+			error: `导入任务超时 (尝试${maxAttempts}次，耗时${(totalTime/1000).toFixed(2)}秒)`
 		};
 	}
 
@@ -2310,8 +2330,11 @@ export class FeishuApiService {
 			// 应用频率控制
 			await this.rateLimitController.throttle('import');
 
+			const url = `${FEISHU_CONFIG.BASE_URL}/drive/v1/import_tasks/${ticket}`;
+			Debug.log(`🔍 [检查导入状态] 请求URL: ${url}`);
+
 			const response = await requestUrl({
-				url: `${FEISHU_CONFIG.BASE_URL}/drive/v1/import_tasks/${ticket}`,
+				url: url,
 				method: 'GET',
 				headers: {
 					'Authorization': `Bearer ${this.settings.accessToken}`,
@@ -2320,16 +2343,24 @@ export class FeishuApiService {
 			});
 
 			const data = response.json || JSON.parse(response.text);
+			Debug.log('📥 [检查导入状态] API完整返回:', JSON.stringify(data, null, 2));
 
 			if (data.code === 0) {
 				const result = data.data.result;
+				Debug.log(`✅ [检查导入状态] 解析结果: job_status=${result.job_status}, token=${result.token || '无'}, type=${result.type || '无'}`);
+
+				// 状态说明: 0=未开始, 1=进行中, 2=失败, 3=成功
+				const statusText = {0: '未开始', 1: '进行中', 2: '失败', 3: '成功'}[result.job_status] || '未知';
+				Debug.log(`📌 [检查导入状态] 任务状态: ${statusText}(${result.job_status})`);
+
 				return {
 					success: true,
 					status: result.job_status,
 					documentToken: result.token
 				};
 			} else {
-				Debug.error('❌ Import status check failed:', data);
+				Debug.error(`❌ [检查导入状态] API返回错误 - code: ${data.code}, msg: ${data.msg}`);
+				Debug.error('❌ [检查导入状态] 完整错误数据:', data);
 				return {
 					success: false,
 					error: data.msg || '检查导入状态失败'
@@ -2337,7 +2368,7 @@ export class FeishuApiService {
 			}
 
 		} catch (error) {
-			Debug.error('Check import status error:', error);
+			Debug.error('❌ [检查导入状态] 请求异常:', error);
 			return {
 				success: false,
 				error: error.message

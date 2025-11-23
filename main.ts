@@ -584,7 +584,11 @@ export default class FeishuPlugin extends Plugin {
 		Debug.error(`${context}:`, error);
 
 		const message = userMessage || `❌ ${context}失败: ${error.message}`;
-		new Notice(message);
+		// 显示更长时间的错误通知（10秒），方便用户查看详细信息
+		new Notice(message, 10000);
+
+		// 同时在控制台输出完整的错误堆栈
+		console.error(`[飞书分享插件] ${context}失败:`, error);
 	}
 
 	/**
