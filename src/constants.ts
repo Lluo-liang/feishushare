@@ -67,6 +67,7 @@ export const DEFAULT_SETTINGS: Partial<FeishuSettings> = {
 	simpleSuccessNotice: false,
 };
 
+
 export const FEISHU_ERROR_MESSAGES: Record<number, string> = {
 	1061002: '参数错误，请检查文件格式和大小',
 	1061005: '文件大小超出限制',
