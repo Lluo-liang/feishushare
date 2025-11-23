@@ -43,9 +43,10 @@ https://your-project-name.vercel.app/oauth-callback
 ```
 feishu-oauth-callback/
 ├── package.json          # 项目配置
-├── vercel.json           # Vercel部署配置
+├── vercel.json           # Vercel部署配置 ✅
 ├── public/
-│   └── oauth-callback.html  # 回调处理页面
+│   ├── index.html        # 首页
+│   └── oauth-callback.html  # 回调处理页面 ✅
 └── README.md             # 说明文档
 ```
 
@@ -54,9 +55,10 @@ feishu-oauth-callback/
 - ✅ 自动跳转到Obsidian
 - ✅ 优雅的错误处理
 - ✅ 手动跳转备用方案
-- ✅ 美观的用户界面
+- ✅ 简洁纯净的用户界面
 - ✅ 详细的调试信息
 - ✅ 移动端适配
+- ✅ 完整的安全响应头配置
 
 ## 🔧 自定义域名（可选）
 
@@ -68,4 +70,4 @@ feishu-oauth-callback/
 
 ## 🐛 调试
 
-页面底部有"显示调试信息"链接，可以查看详细的回调参数和错误信息。
+回调页面底部有"显示调试信息"链接，可以查看详细的回调参数和错误信息。
